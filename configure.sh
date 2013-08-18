@@ -71,7 +71,7 @@ function find_dependencies() {
     exit $ERR
   fi
   # We search for include
-  DEP=`grep "^ *#include" $1 | sed -e 's/^ *#include *[\<"]//g' -e 's/[\>"]*//g'`
+  DEP=`grep "^ *#include" $1 | sed -e 's/^ *#include *[\<"]//g' -e 's/[\>"].*//g'`
   #DEP=`echo ${DEP}`
   for I in `echo $DEP`; do
     # basename is used because of #include "dir/File.h"
