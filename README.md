@@ -25,7 +25,9 @@ usage:
   -C    No colors.
 
 Running without arguments is equivalent to this:
-  `./configure.sh -D -s src -o obj -b bin -c "xcrun clang++" -O "-Wall -Wextra
+```
+./configure.sh -D -s src -o obj -b bin -c "xcrun clang++" -O "-Wall -Wextra
                   -O2 -std=c++11 -stdlib=libc++" -Isrc -L/usr/local/lib -e cpp
-                  -E main -M Makefile`
+                  -E main -M Makefile
+```
 
