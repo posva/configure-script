@@ -33,4 +33,4 @@ Running without arguments is equivalent to this:
 
 License
 -----
-The script is distributed under THE GNU v3 License.
+The script is distributed under the GNU v3 License.

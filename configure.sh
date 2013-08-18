@@ -177,6 +177,8 @@ OBJ_FILES=`echo $(echo ${OBJ_FILES})`
 echo -ne "${BLUE}Creating some rules for Makefile..."
 echo "# Makefile generated with configure script by Eduardo San Martin Morote
 # aka Posva. http://posva.net
+# GitHub repo: https://github.com/posva/configure-script
+# Please report any bug to i@posva.net
 
 CXX := ${CXX}
 OPT := ${DEFAULT_OPTIONS} ${OPTIONS} ${DEFAULT_INCLUDE} ${INCLUDE}
