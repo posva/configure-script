@@ -31,3 +31,6 @@ Running without arguments is equivalent to this:
                   -E main -M Makefile
 ```
 
+License
+-----
+The script is distributed under THE GNU v3 License.

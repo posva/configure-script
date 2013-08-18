@@ -1,14 +1,15 @@
 #! /bin/bash
 # If the colors doesn't work under OSX, get a newer version of bash and use that one
-# You can also use zsh or disable color (WHY?!) with the -C optio with the -C optionn
+# You can also use zsh or disable color (WHY?!) with the -C option
 
-# Configure script that generates a Makefile for a project located at a src/
+# Configure script that generates a Makefile for a project located at a
 # directory. This script doesn't check for compilers or anything as GNU
 # Developers Tools does, so use at your own risk.
-#
+
 # To report a bug contact me at i@posva.net
 # Written by Eduardo San Martin Morote aka Posva
 # http://posva.net
+# https://github.com/posva/configure-script
 
 # Some variables that can be changed through options
 # -c gcc to change this
@@ -32,7 +33,10 @@ DEFAULT_INCLUDE="-I${SRC_DIR}"
 INCLUDE=""
 # Here is the linking step, add any library using the -l-lGL -l-lBox2D
 # BEWARE OF THE DOUBLE -l, this is because in OS X you use -framework OpenGL and not -lGL
+# Remember you can use it this way too:
+# -l "-lGL -lBox2D"
 # Add dirs using -L/usrs/local/lib
+# Don't add any -L here
 DEFAULT_LINK="-L/usr/local/lib"
 LINK=""
 LIBS=""
@@ -40,8 +44,6 @@ LIBS=""
 # Extension of the files that will be compiled
 # Change with -e cc
 FILE_EXT="cpp"
-
-MAIN_FILE="main.$FILE_EXT"
 
 # Automatic conversion from dos files to unix files
 # Disabled by default use -a to enable it
@@ -59,20 +61,20 @@ MAKEFILE="Makefile"
 
 # Utility functions
 
-# This fucntion is the core of the script: it recursively search any dependecy
-# for every file that must be compiled
+# This fucntion is the core of the script: it recursively searches any dependecy
+# for a file passed as first argument
 function find_dependencies() {
-  # We search for include
+  # We first look if file isn't dos, otherwise we cannot do the work
   is_unix_valid $1
   ERR="$?"
   if [ ! "$ERR" = 0 ]; then
     exit $ERR
   fi
+  # We search for include
   DEP=`grep "^ *#include" $1 | sed -e 's/^ *#include *[\<"]//g' -e 's/[\>"]*//g'`
-  # No newline, better than tr
   #DEP=`echo ${DEP}`
   for I in `echo $DEP`; do
-    # basename is because of #include "dir/File.h"
+    # basename is used because of #include "dir/File.h"
     TMP="`find $SRC_DIR -name $(basename ${I})`"
     # Is the file in the project?
     if [ "$TMP" ]; then
@@ -104,7 +106,8 @@ Running without arguments is equivalent to this:
 GitHub repo: https://github.com/posva/configure-script"
 }
 
-# Check if the file is unix or dos
+# Check if the file is unix or dos and convert it if
+# the used asked for it with -a
 function is_unix_valid() {
   if grep -q "" $1 ; then
     if [ "$AUTO_UNIX" ]; then
