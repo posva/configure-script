@@ -1,0 +1,5 @@
+src/
+obj/
+bin/
+Makefile
+Makefile-test
