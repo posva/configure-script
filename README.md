@@ -13,7 +13,10 @@ Help
 Here is the help, you can get it aswell by passing the -h option
 usage: 
 ```
-./configure.sh [-hDa] [-s src-dir] [-o obj-dir] [-b bin-dir] [-c compiler] [-O "compiler options"] [-L link-dirs] [-l lib] [-I include-dir] [-M Makefile-name] [-e file-extension] [-E executable-name]
+./configure.sh [-hDa] [-s src-dir] [-o obj-dir] [-b bin-dir] [-c compiler]
+               [-O "compiler options"] [-L link-dirs] [-l lib]
+               [-I include-dir] [-M Makefile-name] [-e file-extension]
+               [-E executable-name]
 ```
 
   -h    Show this help.
