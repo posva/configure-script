@@ -95,10 +95,12 @@ function find_dependencies() {
 # Just the help when -h
 ME="$0"
 function help() {
-  echo "usage: ${ME} [-hDa] [-s src-dir] [-o obj-dir] [-b bin-dir] [-c compiler] [-O \"compiler options\"] [-L link-dirs] [-l lib] [-I include-dir] [-M Makefile-name] [-e file-extension] [-E executable-name]
+  echo "usage: ${ME} [-hDa] [-s src-dir] [-o obj-dir] [-b bin-dir] [-c compiler] [-O \"compiler options\"] [-L link-dirs] [-l \"-lsome-lib -lother-lib\"] [-I include-dir] [-M Makefile-name] [-e file-extension] [-E executable-name]
   -h\tShow this help.
   -D\tSupress the default options for -L,-I and -O
   -a\tAutomatic conversion of file in dos format to unix format. This option uses d
+
+  Remember that the -l option requires you to add the -l to any lib as it is shown in the example. However it's the oposite for the -L and -I options which both add the -L and the -I before every argument. Therefore consider using a single -l option and multiple -I and -L options.
 
 Running without arguments is equivalent to this:
   ${ME} -D -s src -o obj -b bin -c \"xcrun clang++\" -O \"-Wall -Wextra -O2 -std=c++11 -stdlib=libc++\" -Isrc -L/usr/local/lib -e cpp -E main -M Makefile
