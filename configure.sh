@@ -95,10 +95,11 @@ function find_dependencies() {
 # Just the help when -h
 ME="$0"
 function help() {
-  echo "usage: ${ME} [-hDa] [-s src-dir] [-o obj-dir] [-b bin-dir] [-c compiler] [-O \"compiler options\"] [-L link-dirs] [-l \"-lsome-lib -lother-lib\"] [-I include-dir] [-M Makefile-name] [-e file-extension] [-E executable-name]
+  echo "usage: ${ME} [-hfDa] [-s src-dir] [-o obj-dir] [-b bin-dir] [-c compiler] [-O \"compiler options\"] [-L link-dirs] [-l \"-lsome-lib -lother-lib\"] [-I include-dir] [-M Makefile-name] [-e file-extension] [-E executable-name]
   -h\tShow this help.
-  -D\tSupress the default options for -L,-I and -O
-  -a\tAutomatic conversion of file in dos format to unix format. This option uses d
+  -D\tSupress the default options for -L,-I and -O.
+  -a\tAutomatic conversion of file in dos format to unix format. This option uses d.
+  -f\tForces the creation of the Makefile when it already exists without doing any verification.
 
   Remember that the -l option requires you to add the -l to any lib as it is shown in the example. However it's the oposite for the -L and -I options which both add the -L and the -I before every argument. Therefore consider using a single -l option and multiple -I and -L options.
 
@@ -133,7 +134,7 @@ function is_unix_valid() {
 }
 
 # Recognize parameters
-while getopts ahCs:o:b:c:DO:L:l:I:M:e:E: opt
+while getopts afhCs:o:b:c:DO:L:l:I:M:e:E: opt
 do
   case "$opt" in
     (h) help ; exit ;;
@@ -151,6 +152,7 @@ do
     (O) OPTIONS="$OPTIONS $OPTARG" ;;
     (D) DEFAULT_OPTIONS=""; DEFAULT_INCLUDE=""; DEFAULT_LINK="" ;;
     (M) MAKEFILE="$OPTARG" ;;
+    (f) FORCE="YES" ;;
   esac
 done
 
@@ -174,6 +176,41 @@ FOLDERS=`echo $FOLDERS | tr '\n' ' '`
 FILES=`find $SRC_DIR/* -type f -name "*.$FILE_EXT"`
 OBJ_FILES="`echo "${FILES}" | sed -e "s#^ *${SRC_DIR}#${OBJ_DIR}#g" -e "s#${FILE_EXT}#o#g"`"
 OBJ_FILES=`echo $(echo ${OBJ_FILES})`
+
+# Check if there's already a Makefile
+NEED_UPDATE=""
+if [  "$FORCE" = "" -a -f "$MAKEFILE" ] ; then
+  echo -e "${BLUE}There's already a file named ${MAKEFILE}. Checking if there's something new in the project (You can use the -f option to automatically avoid this check).${CLEAN_COLOR}"
+
+  # We first check if there is a new file in the project
+  for F in `echo $FILES`; do
+    OF=`echo "$F" | sed -e "s#${SRC_DIR}#${OBJ_DIR}#g" -e "s#${FILE_EXT}#o#g"`
+    if ! grep "$OF" $MAKEFILE 2>/dev/null 1>/dev/null ; then
+      NEED_UPDATE="YES"
+      echo -e "${RED}${OF} doesn't have a rule. A new ${MAKEFILE} is going to be generated.${CLEAN_COLOR}"
+      break
+    fi
+  done
+
+  # We now check if there's a deleted file in the project
+  if [ ! "$NEED_UPDATE" ]; then
+    RULES=`grep ".o :" ${MAKEFILE} | sed -e 's# :.*##g' -e "s#\.o#.${FILE_EXT}#g"`
+    for F in `echo $RULES`; do
+      if [ ! "`find ${SRC_DIR} -name $(basename $F)`" ]; then
+        NEED_UPDATE="YES"
+        echo -e "${RED}`basename $F` doesn't exist anymore but there is a rule in the Makefile.${CLEAN_COLOR}"
+        break
+      fi
+    done
+  fi
+
+  # We need to do a verification of the dependencies for each rule
+  # TODO Add the real verification isntead of a Warning message
+  if [ ! "$NEED_UPDATE" ]; then
+    echo -e "${YELLOW}It seems the $MAKEFILE is up-to-date, though not a single dependency has been checked. Therefore if you have added new dependencies (#include) to any of the files in the project consider using the -f option to regenerate it.${CLEAN_COLOR}"
+    exit
+  fi
+fi
 
 # Create a blank Makefile and add some rules
 echo -ne "${BLUE}Creating some rules for Makefile..."
