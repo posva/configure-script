@@ -27,10 +27,12 @@ BIN_DIR="bin"
 # Add new options with -O "-Wall -Os"
 DEFAULT_OPTIONS="-Wall -Wextra -O2 -std=c++11 -stdlib=libc++"
 OPTIONS=""
+
 # Include directories default options
 # Add new directories with -Isrc/
 DEFAULT_INCLUDE="-I${SRC_DIR}"
 INCLUDE=""
+
 # Here is the linking step, add any library using the -l-lGL -l-lBox2D
 # BEWARE OF THE DOUBLE -l, this is because in OS X you use -framework OpenGL and not -lGL
 # Remember you can use it this way too:
@@ -40,6 +42,12 @@ INCLUDE=""
 DEFAULT_LINK="-L/usr/local/lib"
 LINK=""
 LIBS=""
+
+# Trying with Linux and OS X gave me different result, though I was using the clang++
+# compiler. Therefore I added this option so we can set specifically the options for
+# the linking step.
+DEFAULT_LINK_OPT="-std=c++11 -stdlib=libc++"
+LINK_OPT=""
 
 # Extension of the files that will be compiled
 # Change with -e cc
@@ -95,16 +103,16 @@ function find_dependencies() {
 # Just the help when -h
 ME="$0"
 function help() {
-  echo "usage: ${ME} [-hfDa] [-s src-dir] [-o obj-dir] [-b bin-dir] [-c compiler] [-O \"compiler options\"] [-L link-dirs] [-l \"-lsome-lib -lother-lib\"] [-I include-dir] [-M Makefile-name] [-e file-extension] [-E executable-name]
+  echo "usage: ${ME} [-hfDa] [-s src-dir] [-o obj-dir] [-b bin-dir] [-c compiler] [-O \"compiler options\"] [-L link-dirs] [-l \"-lsome-lib -lother-lib\"] [-I include-dir] [-M Makefile-name] [-e file-extension] [-E executable-name] [-N linker-options]
   -h\tShow this help.
-  -D\tSupress the default options for -L,-I and -O.
+  -D\tSupress the default options for -L, -I, -N and -O.
   -a\tAutomatic conversion of file in dos format to unix format. This option uses d.
   -f\tForces the creation of the Makefile when it already exists without doing any verification.
 
   Remember that the -l option requires you to add the -l to any lib as it is shown in the example. However it's the oposite for the -L and -I options which both add the -L and the -I before every argument. Therefore consider using a single -l option and multiple -I and -L options.
 
 Running without arguments is equivalent to this:
-  ${ME} -D -s src -o obj -b bin -c \"xcrun clang++\" -O \"-Wall -Wextra -O2 -std=c++11 -stdlib=libc++\" -Isrc -L/usr/local/lib -e cpp -E main -M Makefile
+  ${ME} -D -s src -o obj -b bin -c \"xcrun clang++\" -O \"-Wall -Wextra -O2 -std=c++11 -stdlib=libc++\" -Isrc -L/usr/local/lib -e cpp -E main -M Makefile -N \"-std=c++11 -stlib=libc++\"
 
 GitHub repo: https://github.com/posva/configure-script"
 }
@@ -134,7 +142,7 @@ function is_unix_valid() {
 }
 
 # Recognize parameters
-while getopts afhCs:o:b:c:DO:L:l:I:M:e:E: opt
+while getopts afhCs:o:b:c:DO:L:l:I:M:e:E:N: opt
 do
   case "$opt" in
     (h) help ; exit ;;
@@ -150,8 +158,9 @@ do
     (c) CXX="$OPTARG" ;;
     (I) INCLUDE="$INCLUDE -I$OPTARG" ;;
     (O) OPTIONS="$OPTIONS $OPTARG" ;;
-    (D) DEFAULT_OPTIONS=""; DEFAULT_INCLUDE=""; DEFAULT_LINK="" ;;
+    (D) DEFAULT_OPTIONS=""; DEFAULT_INCLUDE=""; DEFAULT_LINK=""; DEFAULT_LINK_OPT="" ;;
     (M) MAKEFILE="$OPTARG" ;;
+    (N) LINK_OPT="$OPTARG" ;;
     (f) FORCE="YES" ;;
   esac
 done
@@ -208,9 +217,10 @@ if [  "$FORCE" = "" -a -f "$MAKEFILE" ] ; then
   if [ ! "$NEED_UPDATE" ]; then
     M_CXX="`grep "^CXX :=" ${MAKEFILE} | sed 's#CXX := ##g'`"
     M_OPT="`grep "^OPT :=" ${MAKEFILE} | sed 's#OPT := ##g'`"
+    M_LINK_OPT="`grep "^LINK_OPT :=" ${MAKEFILE} | sed 's#LINK_OPT := ##g'`"
     M_LIBS="`grep "^LIBS :=" ${MAKEFILE} | sed 's#LIBS := ##g'`"
 
-    if [ ! "${M_CXX}" = "${CXX}" -o ! "${M_OPT}" = "${DEFAULT_OPTIONS} ${OPTIONS} ${DEFAULT_INCLUDE} ${INCLUDE}" -o ! "${M_LIBS}" = "${DEFAULT_LINK} ${LIBS}" ]; then
+    if [ ! "${M_CXX}" = "${CXX}" -o ! "${M_OPT}" = "${DEFAULT_OPTIONS} ${OPTIONS} ${DEFAULT_INCLUDE} ${INCLUDE}" -o ! "${M_LIBS}" = "${DEFAULT_LINK} ${LIBS}" -o ! "${M_LINK_OPT}" = "${DEFAULT_LINK_OPT} ${LINK_OPT}" ]; then
       NEED_UPDATE="YES"
       echo -e "${RED}Some options changed, the Makefile must be generated again.${CLEAN_COLOR}"
     fi
@@ -233,7 +243,7 @@ echo "# Makefile generated with configure script by Eduardo San Martin Morote
 
 CXX := ${CXX}
 OPT := ${DEFAULT_OPTIONS} ${OPTIONS} ${DEFAULT_INCLUDE} ${INCLUDE}
-LINK_OPT :=
+LINK_OPT := ${DEFAULT_OPTIONS} ${LINK_OPT}
 LIBS := ${DEFAULT_LINK} ${LIBS}
 
 
