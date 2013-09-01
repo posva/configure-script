@@ -204,6 +204,18 @@ if [  "$FORCE" = "" -a -f "$MAKEFILE" ] ; then
     done
   fi
 
+  # Verify some variables such as compilers, options, include dirs, etc
+  if [ ! "$NEED_UPDATE" ]; then
+    M_CXX="`grep "^CXX :=" ${MAKEFILE} | sed 's#CXX := ##g'`"
+    M_OPT="`grep "^OPT :=" ${MAKEFILE} | sed 's#OPT := ##g'`"
+    M_LIBS="`grep "^LIBS :=" ${MAKEFILE} | sed 's#LIBS := ##g'`"
+
+    if [ ! "${M_CXX}" = "${CXX}" -o ! "${M_OPT}" = "${DEFAULT_OPTIONS} ${OPTIONS} ${DEFAULT_INCLUDE} ${INCLUDE}" -o ! "${M_LIBS}" = "${DEFAULT_LINK} ${LIBS}" ]; then
+      NEED_UPDATE="YES"
+      echo -e "${RED}Some options changed, the Makefile must be generated again.${CLEAN_COLOR}"
+    fi
+  fi
+
   # We need to do a verification of the dependencies for each rule
   # TODO Add the real verification isntead of a Warning message
   if [ ! "$NEED_UPDATE" ]; then
@@ -221,6 +233,7 @@ echo "# Makefile generated with configure script by Eduardo San Martin Morote
 
 CXX := ${CXX}
 OPT := ${DEFAULT_OPTIONS} ${OPTIONS} ${DEFAULT_INCLUDE} ${INCLUDE}
+LINK_OPT :=
 LIBS := ${DEFAULT_LINK} ${LIBS}
 
 
@@ -266,7 +279,7 @@ for F in `echo $FILES`; do
   FINAL_DEP=$(echo `echo $MY_DEP`)
   # add the rule to the Makefile
   echo "`echo $F | sed -e "s#${SRC_DIR}#${OBJ_DIR}#g" -e "s#${FILE_EXT}#o#g"` : ${F} ${FINAL_DEP}
-	\$(CXX) \$(OPT) \$< -c -o \$@
+	\$(CXX) \$(LINK_OPT) \$< -c -o \$@
 
 " >> $MAKEFILE
 
