@@ -240,7 +240,7 @@ LIBS := ${DEFAULT_LINK} ${LIBS}
 all : ${BIN_DIR}/${EXEC}
 
 ${BIN_DIR}/${EXEC} : ${OBJ_FILES}
-	\$(CXX) \$(OPT) \$^ -o "\$@" \$(LIBS)
+	\$(CXX) \$(LINK_OPT) \$^ -o "\$@" \$(LIBS)
 
 run : all
 	./${BIN_DIR}/${EXEC}
@@ -279,7 +279,7 @@ for F in `echo $FILES`; do
   FINAL_DEP=$(echo `echo $MY_DEP`)
   # add the rule to the Makefile
   echo "`echo $F | sed -e "s#${SRC_DIR}#${OBJ_DIR}#g" -e "s#${FILE_EXT}#o#g"` : ${F} ${FINAL_DEP}
-	\$(CXX) \$(LINK_OPT) \$< -c -o \$@
+	\$(CXX) \$(OPT) \$< -c -o \$@
 
 " >> $MAKEFILE
 
