@@ -67,11 +67,19 @@ EXEC="main"
 # Change with -M newName
 MAKEFILE="Makefile"
 
+# Almost useless since this script is already wuite verbose
+VERBOSE=""
+
 # Utility functions
 
-# This fucntion is the core of the script: it recursively searches any dependecy
+# This function is the core of the script: it recursively searches any dependecy
 # for a file passed as first argument
 function find_dependencies() {
+  MY_DEP=""
+  find_dependencies_aux $1
+}
+
+function find_dependencies_aux() {
   # We first look if file isn't dos, otherwise we cannot do the work
   is_unix_valid $1
   ERR="$?"
@@ -90,7 +98,7 @@ function find_dependencies() {
       # We stop the recursivity because the file have already been checked
       if [ ! "$VALID" = "BAD" ]; then
         MY_DEP="$MY_DEP $TMP"
-        find_dependencies $TMP
+        find_dependencies_aux $TMP
         ERR="$?"
         if [ ! "$ERR" = 0 ]; then
           exit $ERR
@@ -103,11 +111,12 @@ function find_dependencies() {
 # Just the help when -h
 ME="$0"
 function help() {
-  echo "usage: ${ME} [-hfDa] [-s src-dir] [-o obj-dir] [-b bin-dir] [-c compiler] [-O \"compiler options\"] [-L link-dirs] [-l \"-lsome-lib -lother-lib\"] [-I include-dir] [-M Makefile-name] [-e file-extension] [-E executable-name] [-N linker-options]
+  echo "usage: ${ME} [-hfDav] [-s src-dir] [-o obj-dir] [-b bin-dir] [-c compiler] [-O \"compiler options\"] [-L link-dirs] [-l \"-lsome-lib -lother-lib\"] [-I include-dir] [-M Makefile-name] [-e file-extension] [-E executable-name] [-N linker-options]
   -h\tShow this help.
   -D\tSupress the default options for -L, -I, -N and -O.
   -a\tAutomatic conversion of file in dos format to unix format. This option uses d.
   -f\tForces the creation of the Makefile when it already exists without doing any verification.
+  -v\tVerbose mode: Show the dependencies for every file
 
   Remember that the -l option requires you to add the -l to any lib as it is shown in the example. However it's the oposite for the -L and -I options which both add the -L and the -I before every argument. Therefore consider using a single -l option and multiple -I and -L options.
 
@@ -142,10 +151,11 @@ function is_unix_valid() {
 }
 
 # Recognize parameters
-while getopts afhCs:o:b:c:DO:L:l:I:M:e:E:N: opt
+while getopts avfhCs:o:b:c:DO:L:l:I:M:e:E:N: opt
 do
   case "$opt" in
     (h) help ; exit ;;
+    (v) VERBOSE="YES" ;;
     (a) AUTO_UNIX="YES" ;;
     (C) COLORS="" ;;
     (s) SRC_DIR="$OPTARG" ;;
@@ -219,8 +229,9 @@ if [  "$FORCE" = "" -a -f "$MAKEFILE" ] ; then
     M_OPT="`grep "^OPT :=" ${MAKEFILE} | sed 's#OPT := ##g'`"
     M_LINK_OPT="`grep "^LINK_OPT :=" ${MAKEFILE} | sed 's#LINK_OPT := ##g'`"
     M_LIBS="`grep "^LIBS :=" ${MAKEFILE} | sed 's#LIBS := ##g'`"
+    M_EXEC="`grep "^EXEC :=" ${MAKEFILE} | sed 's#EXEC := ##g'`"
 
-    if [ ! "${M_CXX}" = "${CXX}" -o ! "${M_OPT}" = "${DEFAULT_OPTIONS} ${OPTIONS} ${DEFAULT_INCLUDE} ${INCLUDE}" -o ! "${M_LIBS}" = "${DEFAULT_LINK} ${LIBS}" -o ! "${M_LINK_OPT}" = "${DEFAULT_LINK_OPT} ${LINK_OPT}" ]; then
+    if [ ! "${M_CXX}" = "${CXX}" -o ! "${M_OPT}" = "${DEFAULT_OPTIONS} ${OPTIONS} ${DEFAULT_INCLUDE} ${INCLUDE}" -o ! "${M_LIBS}" = "${DEFAULT_LINK} ${LIBS}" -o ! "${M_LINK_OPT}" = "${DEFAULT_LINK_OPT} ${LINK_OPT}" -o ! "${M_EXEC}" = "${EXEC}" ]; then
       NEED_UPDATE="YES"
       echo -e "${RED}Some options changed, the Makefile must be generated again.${CLEAN_COLOR}"
     fi
@@ -243,25 +254,27 @@ echo "# Makefile generated with configure script by Eduardo San Martin Morote
 
 CXX := ${CXX}
 OPT := ${DEFAULT_OPTIONS} ${OPTIONS} ${DEFAULT_INCLUDE} ${INCLUDE}
-LINK_OPT := ${DEFAULT_OPTIONS} ${LINK_OPT}
+LINK_OPT := ${DEFAULT_LINK_OPT} ${LINK_OPT}
 LIBS := ${DEFAULT_LINK} ${LIBS}
+EXEC := ${EXEC}
 
 
-all : ${BIN_DIR}/${EXEC}
+all : ${BIN_DIR}/\$(EXEC)
 
-${BIN_DIR}/${EXEC} : ${OBJ_FILES}
+${BIN_DIR}/\$(EXEC) : ${OBJ_FILES}
 	\$(CXX) \$(LINK_OPT) \$^ -o "\$@" \$(LIBS)
 
 run : all
-	./${BIN_DIR}/${EXEC}
+	./${BIN_DIR}/\$(EXEC)
 
 clean :
-	rm -f $OBJ_FILES ${BIN_DIR}/${EXEC}
+	rm -f $OBJ_FILES ${BIN_DIR}/\$(EXEC)
 .PHONY : clean
 
 " > $MAKEFILE
 echo -e "${GREEN}OK${CLEAN_COLOR}"
 
+# Create the directories obj and bin
 echo -en "${BLUE}Creating directories..."
 if mkdir -p $OBJ_DIR $BIN_DIR `echo $FOLDERS`; then
   echo -e "${GREEN}OK"
@@ -270,6 +283,7 @@ else
   exit $1
 fi
 
+# Find every dependecy for each file
 for F in `echo $FILES`; do
   is_unix_valid $F
   ERR="$?"
@@ -277,9 +291,8 @@ for F in `echo $FILES`; do
     exit $ERR
   fi
 
-  echo -e "${BLUE}Checking dependencies for ${F}...${CLEAN_COLOR}"
-  FINAL_DEP=""
-  MY_DEP=""
+  echo -ne "${BLUE}Checking dependencies for ${F}...${CLEAN_COLOR}"
+
   find_dependencies $F
   ERR="$?"
   if [ ! "$ERR" = 0 ]; then
@@ -293,7 +306,9 @@ for F in `echo $FILES`; do
 
 " >> $MAKEFILE
 
-  echo -e "${YELLOW}Dependencies: $FINAL_DEP
-${GREEN}OK${CLEAN_COLOR}"
+  echo -e "${GREEN}OK${CLEAN_COLOR}"
+  if [ "$VERBOSE" ]; then
+    echo -e "${YELLOW}Dependencies: $FINAL_DEP"
+  fi
 done
 
