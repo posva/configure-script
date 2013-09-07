@@ -226,7 +226,7 @@ function change_lang() {
       INC_FILENAME_END=".java"
       ;;
     *)
-      echo "The language ${LANGUAGE} is nt supported (yet). You can ass the support if you want and do a pull request at https://github.com/posva/configure-script . I'll really appreciate it :D"
+      echo "The language ${LANGUAGE} is not supported (yet). You can ass the support if you want and do a pull request at https://github.com/posva/configure-script . I'll really appreciate it :D"
       exit 1
       ;;
   esac
