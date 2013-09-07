@@ -14,6 +14,13 @@
 # Some variables that can be changed through options
 # -c gcc to change this
 CXX="xcrun clang++" # Compiler
+# -k to change the linker (the linker is used in only one rule of the Makefile)
+LINKER="$CXX"
+
+# Language, by default is C/C++
+# Changing the Language with -G will change many options, to overwrite
+# these you must use the -G before any other argument-option
+LANGUAGE="C"
 
 # Where are the files
 # change with -s some-dir, same for -o and -b
@@ -52,6 +59,7 @@ LINK_OPT=""
 # Extension of the files that will be compiled
 # Change with -e cc
 FILE_EXT="cpp"
+OBJ_EXT="o"
 
 # Automatic conversion from dos files to unix files
 # Disabled by default use -a to enable it
@@ -72,12 +80,26 @@ VERBOSE=""
 
 # Utility functions
 
+# Some variables to make the script fucntional not only for C/C++ projects
+# This is what should be changed from one language to another
+INC_PREP="^ *#include" # Used to catch lines with includes
+INC_PREP_BEG="^ *#include *[\\<\"]" # Supress the begining of the line until the name of the included file
+INC_PREP_END="[\\>\"].*" # Supress the end of the line leaving only the thing included
+
 # This function is the core of the script: it recursively searches any dependecy
 # for a file passed as first argument
 function find_dependencies() {
   MY_DEP=""
   find_dependencies_aux $1
 }
+
+# Depending on the language the include filename can change
+# for instance in C/C++ the you don't need to do anything:
+# you etract file.h from #include "file.h" and it's OK
+# but in Java you extract file from import com.pack.file;
+# and you need to add the .java to have the real filename
+INC_FILENAME_BEG=""
+INC_FILENAME_END=""
 
 function find_dependencies_aux() {
   # We first look if file isn't dos, otherwise we cannot do the work
@@ -87,11 +109,11 @@ function find_dependencies_aux() {
     exit $ERR
   fi
   # We search for include
-  DEP=`grep "^ *#include" $1 | sed -e 's/^ *#include *[\<"]//g' -e 's/[\>"].*//g'`
+  DEP=`grep "$INC_PREP" $1 | sed -e "s/${INC_PREP_BEG}//g" -e "s/${INC_PREP_END}//g"`
   #DEP=`echo ${DEP}`
   for I in `echo $DEP`; do
     # basename is used because of #include "dir/File.h"
-    TMP="`find $SRC_DIR -name $(basename ${I})`"
+    TMP="`find $SRC_DIR -name \"${INC_FILENAME_BEG}$(basename ${I})${INC_FILENAME_END}\"`"
     # Is the file in the project?
     if [ "$TMP" ]; then
       VALID="`echo $MY_DEP | sed "s#.*${TMP}.*#BAD#g"`"
@@ -111,13 +133,14 @@ function find_dependencies_aux() {
 # Just the help when -h
 ME="$0"
 function help() {
-  echo "usage: ${ME} [-hfDav] [-s src-dir] [-o obj-dir] [-b bin-dir] [-c compiler] [-O \"compiler options\"] [-L link-dirs] [-l \"-lsome-lib -lother-lib\"] [-I include-dir] [-M Makefile-name] [-e file-extension] [-E executable-name] [-N linker-options]
+  echo "usage: ${ME} [-hfDav] [-G lang] [-s src-dir] [-o obj-dir] [-b bin-dir] [-c compiler] [-k linker] [-O \"compiler options\"] [-L link-dirs] [-l \"-lsome-lib -lother-lib\"] [-I include-dir] [-M Makefile-name] [-e file-extension] [-E executable-name] [-N linker-options]
   -h\tShow this help.
   -D\tSupress the default options for -L, -I, -N and -O.
   -a\tAutomatic conversion of file in dos format to unix format. This option uses d.
   -f\tForces the creation of the Makefile when it already exists without doing any verification.
   -v\tVerbose mode: Show the dependencies for every file
 
+  If you change the compiler with the -c option but not the linker with the -k option, the linker is set to the compiler
   Remember that the -l option requires you to add the -l to any lib as it is shown in the example. However it's the oposite for the -L and -I options which both add the -L and the -I before every argument. Therefore consider using a single -l option and multiple -I and -L options.
 
 Running without arguments is equivalent to this:
@@ -150,8 +173,65 @@ function is_unix_valid() {
   fi
 }
 
+# This function swicth between different languages and do the verifications
+
+function change_lang() {
+  case "${LANGUAGE}" in
+    C)
+      SRC_DIR="src"
+      OBJ_DIR="obj"
+      BIN_DIR="bin"
+      CXX="xcrun clang++"
+      LINKER="$CXX"
+      DEFAULT_OPTIONS="-Wall -Wextra -O2 -std=c++11 -stdlib=libc++"
+      OPTIONS=""
+      DEFAULT_INCLUDE="-I${SRC_DIR}"
+      INCLUDE=""
+      DEFAULT_LINK="-L/usr/local/lib"
+      LINK=""
+      LIBS=""
+      DEFAULT_LINK_OPT="-std=c++11 -stdlib=libc++"
+      LINK_OPT=""
+      FILE_EXT="cpp"
+      OBJ_EXT="o"
+      EXEC="main"
+      INC_PREP="^ *#include"
+      INC_PREP_BEG="^ *#include *[\\<\"]"
+      INC_PREP_END="[\\>\"].*"
+      INC_FILENAME_BEG=""
+      INC_FILENAME_END=""
+      ;;
+    java)
+      SRC_DIR="src"
+      OBJ_DIR="bin"
+      BIN_DIR="bin"
+      CXX="javac"
+      LINKER="javac"
+      DEFAULT_OPTIONS="-g -encoding UTF8"
+      OPTIONS=""
+      DEFAULT_INCLUDE="-sourcepath ${SRC_DIR}"
+      INCLUDE=""
+      DEFAULT_LINK="-d ${BIN_DIR}"
+      LINK=""
+      LIBS=""
+      DEFAULT_LINK_OPT=""
+      LINK_OPT=""
+      FILE_EXT="java"
+      OBJ_EXT="class"
+      EXEC="app"
+      INC_PREP="^ *import"
+      INC_PREP_BEG="^ *import  *.*\\."
+      INC_PREP_END=";.*"
+      INC_FILENAME_BEG=""
+      INC_FILENAME_END=".java"
+      ;;
+  esac
+}
+
 # Recognize parameters
-while getopts avfhCs:o:b:c:DO:L:l:I:M:e:E:N: opt
+COMPILER_CHANGED=""
+LINKER_SET=""
+while getopts avfhCs:o:b:c:k:DO:L:l:I:M:e:E:N:G: opt
 do
   case "$opt" in
     (h) help ; exit ;;
@@ -165,17 +245,24 @@ do
     (L) LINK="$LINK -L$OPTARG" ;;
     (e) FILE_EXT="$OPTARG" ;;
     (E) EXEC="$OPTARG" ;;
-    (c) CXX="$OPTARG" ;;
+    (c) CXX="$OPTARG"; COMPILER_CHANGED="YES" ;;
+    (k) LINKER="$OPTARG"; LINKER_SET="YES" ;;
     (I) INCLUDE="$INCLUDE -I$OPTARG" ;;
     (O) OPTIONS="$OPTIONS $OPTARG" ;;
     (D) DEFAULT_OPTIONS=""; DEFAULT_INCLUDE=""; DEFAULT_LINK=""; DEFAULT_LINK_OPT="" ;;
     (M) MAKEFILE="$OPTARG" ;;
     (N) LINK_OPT="$OPTARG" ;;
+    (G) LANGUAGE="$OPTARG" ; change_lang ; if [ ! "$?" = 0 ]; then exit "$?" ; fi ;;
     (f) FORCE="YES" ;;
   esac
 done
 
 shift $(($OPTIND - 1))
+
+# Set the linker in certain condition
+if [ "$COMPILER_CHANGED" -a ! "$LINKER_SET" ]; then
+  LINKER="$CXX"
+fi
 
 # COLORS!!!!
 if [ "$COLORS" ]; then
@@ -193,7 +280,7 @@ fi
 FOLDERS=`find $SRC_DIR/* -type d | sed "s/$SRC_DIR/$OBJ_DIR/g"`
 FOLDERS=`echo $FOLDERS | tr '\n' ' '`
 FILES=`find $SRC_DIR/* -type f -name "*.$FILE_EXT"`
-OBJ_FILES="`echo "${FILES}" | sed -e "s#^ *${SRC_DIR}#${OBJ_DIR}#g" -e "s#${FILE_EXT}#o#g"`"
+OBJ_FILES="`echo "${FILES}" | sed -e "s#^ *${SRC_DIR}#${OBJ_DIR}#g" -e "s#${FILE_EXT}#${OBJ_EXT}#g"`"
 OBJ_FILES=`echo $(echo ${OBJ_FILES})`
 
 # Check if there's already a Makefile
@@ -203,7 +290,7 @@ if [  "$FORCE" = "" -a -f "$MAKEFILE" ] ; then
 
   # We first check if there is a new file in the project
   for F in `echo $FILES`; do
-    OF=`echo "$F" | sed -e "s#${SRC_DIR}#${OBJ_DIR}#g" -e "s#${FILE_EXT}#o#g"`
+    OF=`echo "$F" | sed -e "s#${SRC_DIR}#${OBJ_DIR}#g" -e "s#${FILE_EXT}#${OBJ_EXT}#g"`
     if ! grep "$OF" $MAKEFILE 2>/dev/null 1>/dev/null ; then
       NEED_UPDATE="YES"
       echo -e "${RED}${OF} doesn't have a rule. A new ${MAKEFILE} is going to be generated.${CLEAN_COLOR}"
@@ -213,7 +300,7 @@ if [  "$FORCE" = "" -a -f "$MAKEFILE" ] ; then
 
   # We now check if there's a deleted file in the project
   if [ ! "$NEED_UPDATE" ]; then
-    RULES=`grep ".o :" ${MAKEFILE} | sed -e 's# :.*##g' -e "s#\.o#.${FILE_EXT}#g"`
+    RULES=`grep ".${OBJ_EXT} :" ${MAKEFILE} | sed -e 's# :.*##g' -e "s#\.${OBJ_EXT}#.${FILE_EXT}#g"`
     for F in `echo $RULES`; do
       if [ ! "`find ${SRC_DIR} -name $(basename $F)`" ]; then
         NEED_UPDATE="YES"
@@ -226,12 +313,13 @@ if [  "$FORCE" = "" -a -f "$MAKEFILE" ] ; then
   # Verify some variables such as compilers, options, include dirs, etc
   if [ ! "$NEED_UPDATE" ]; then
     M_CXX="`grep "^CXX :=" ${MAKEFILE} | sed 's#CXX := ##g'`"
+    M_LINKER="`grep "^LINKER :=" ${MAKEFILE} | sed 's#LINKER := ##g'`"
     M_OPT="`grep "^OPT :=" ${MAKEFILE} | sed 's#OPT := ##g'`"
     M_LINK_OPT="`grep "^LINK_OPT :=" ${MAKEFILE} | sed 's#LINK_OPT := ##g'`"
     M_LIBS="`grep "^LIBS :=" ${MAKEFILE} | sed 's#LIBS := ##g'`"
     M_EXEC="`grep "^EXEC :=" ${MAKEFILE} | sed 's#EXEC := ##g'`"
 
-    if [ ! "${M_CXX}" = "${CXX}" -o ! "${M_OPT}" = "${DEFAULT_OPTIONS} ${OPTIONS} ${DEFAULT_INCLUDE} ${INCLUDE}" -o ! "${M_LIBS}" = "${DEFAULT_LINK} ${LIBS}" -o ! "${M_LINK_OPT}" = "${DEFAULT_LINK_OPT} ${LINK_OPT}" -o ! "${M_EXEC}" = "${EXEC}" ]; then
+    if [ ! "${M_CXX}" = "${CXX}" -o ! "${M_LINKER}" = "${LINKER}" -o ! "${M_OPT}" = "${DEFAULT_OPTIONS} ${OPTIONS} ${DEFAULT_INCLUDE} ${INCLUDE}" -o ! "${M_LIBS}" = "${DEFAULT_LINK} ${LIBS}" -o ! "${M_LINK_OPT}" = "${DEFAULT_LINK_OPT} ${LINK_OPT}" -o ! "${M_EXEC}" = "${EXEC}" ]; then
       NEED_UPDATE="YES"
       echo -e "${RED}Some options changed, the Makefile must be generated again.${CLEAN_COLOR}"
     fi
@@ -253,16 +341,22 @@ echo "# Makefile generated with configure script by Eduardo San Martin Morote
 # Please report any bug to i@posva.net
 
 CXX := ${CXX}
+LINKER := ${LINKER}
 OPT := ${DEFAULT_OPTIONS} ${OPTIONS} ${DEFAULT_INCLUDE} ${INCLUDE}
 LINK_OPT := ${DEFAULT_LINK_OPT} ${LINK_OPT}
 LIBS := ${DEFAULT_LINK} ${LIBS}
 EXEC := ${EXEC}
 
 
+" > ${MAKEFILE}
+
+case "$LANGUAGE" in
+  C)
+    echo "
 all : ${BIN_DIR}/\$(EXEC)
 
 ${BIN_DIR}/\$(EXEC) : ${OBJ_FILES}
-	\$(CXX) \$(LINK_OPT) \$^ -o "\$@" \$(LIBS)
+	\$(LINKER) \$(LINK_OPT) \$^ -o "\$@" \$(LIBS)
 
 run : all
 	./${BIN_DIR}/\$(EXEC)
@@ -271,7 +365,25 @@ clean :
 	rm -f $OBJ_FILES ${BIN_DIR}/\$(EXEC)
 .PHONY : clean
 
-" > $MAKEFILE
+" >> ${MAKEFILE}
+    ;;
+  java)
+    echo "all : ${OBJ_FILES}
+
+run : all
+	cd ${BIN_DIR} && java ${EXEC}
+.PHONY : run
+
+clean :
+	rm -f $OBJ_FILES
+.PHONY : clean
+
+" >> ${MAKEFILE}
+    ;;
+esac
+
+# TODO nest every echo in the case to avoid unused variables
+
 echo -e "${GREEN}OK${CLEAN_COLOR}"
 
 # Create the directories obj and bin
@@ -301,10 +413,20 @@ for F in `echo $FILES`; do
   ## Supress blank characters
   FINAL_DEP=$(echo `echo $MY_DEP`)
   # add the rule to the Makefile
-  echo "`echo $F | sed -e "s#${SRC_DIR}#${OBJ_DIR}#g" -e "s#${FILE_EXT}#o#g"` : ${F} ${FINAL_DEP}
+  case "$LANGUAGE" in
+    C)
+      echo "`echo $F | sed -e "s#${SRC_DIR}#${OBJ_DIR}#g" -e "s#${FILE_EXT}#${OBJ_EXT}#g"` : ${F} ${FINAL_DEP}
 	\$(CXX) \$(OPT) \$< -c -o \$@
 
 " >> $MAKEFILE
+      ;;
+    java)
+      echo "`echo $F | sed -e "s#${SRC_DIR}#${OBJ_DIR}#g" -e "s#${FILE_EXT}#${OBJ_EXT}#g"` : ${F} ${FINAL_DEP}
+	\$(CXX) \$(OPT) \$(LIBS) \$<
+
+" >> $MAKEFILE
+      ;;
+  esac
 
   echo -e "${GREEN}OK${CLEAN_COLOR}"
   if [ "$VERBOSE" ]; then
