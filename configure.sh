@@ -338,7 +338,7 @@ if [  "$FORCE" = "" -a -f "$MAKEFILE" ] ; then
 fi
 
 # Create a blank Makefile and add some rules
-echo -ne "${BLUE}Creating some rules for Makefile..."
+echo -ne "${BLUE}Creating some rules for Makefile...${CLEAN_COLOR}"
 echo "# Makefile generated with configure script by Eduardo San Martin Morote
 # aka Posva. http://posva.net
 # GitHub repo: https://github.com/posva/configure-script
@@ -391,11 +391,11 @@ esac
 echo -e "${GREEN}OK${CLEAN_COLOR}"
 
 # Create the directories obj and bin
-echo -en "${BLUE}Creating directories..."
+echo -en "${BLUE}Creating directories...${CLEAN_COLOR}"
 if mkdir -p $OBJ_DIR $BIN_DIR `echo $FOLDERS`; then
-  echo -e "${GREEN}OK"
+  echo -e "${GREEN}OK${CLEAN_COLOR}"
 else
-  echo -e "${RED}KO"
+  echo -e "${RED}KO${CLEAN_COLOR}"
   exit $1
 fi
 
