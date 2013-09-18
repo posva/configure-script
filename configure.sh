@@ -218,7 +218,7 @@ function change_lang() {
       LINK_OPT=""
       FILE_EXT="java"
       OBJ_EXT="class"
-      EXEC="app"
+      EXEC="App"
       INC_PREP="^ *import"
       INC_PREP_BEG="^ *import  *.*\\."
       INC_PREP_END=";.*"
