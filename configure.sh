@@ -12,7 +12,10 @@
 # https://github.com/posva/configure-script
 
 # log elapsed time
-if man date | grep BSD; then
+if man date | grep BSD >/dev/null 2>/dev/null; then
+  IS_BSD="YES"
+fi
+if [ "${IS_BSD}" ]; then
   LOG_START=`date +%s`
 else
   LOG_START=`date +%s%N`
@@ -447,7 +450,7 @@ done
 
 # log the elapsed time
 # BSD date don't have nanoseconds
-if man date | grep BSD; then
+if [ "${IS_BSD}" ]; then
   LOG_END=`date +%s`
   ELAPSED=$(( $LOG_END - $LOG_START ))
 else
