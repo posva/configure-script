@@ -11,6 +11,13 @@
 # http://posva.net
 # https://github.com/posva/configure-script
 
+# log elapsed time
+if man date | grep BSD; then
+  LOG_START=`date +%s`
+else
+  LOG_START=`date +%s%N`
+fi
+
 # Some variables that can be changed through options
 # -c gcc to change this
 CXX="xcrun clang++" # Compiler
@@ -434,7 +441,18 @@ for F in `echo $FILES`; do
 
   echo -e "${GREEN}OK${CLEAN_COLOR}"
   if [ "$VERBOSE" ]; then
-    echo -e "${YELLOW}Dependencies: $FINAL_DEP"
+    echo -e "${YELLOW}Dependencies: $FINAL_DEP${CLEAN_COLOR}"
   fi
 done
+
+# log the elapsed time
+# BSD date don't have nanoseconds
+if man date | grep BSD; then
+  LOG_END=`date +%s`
+  ELAPSED=$(( $LOG_END - $LOG_START ))
+else
+  LOG_END=`date +%s%N`
+  ELAPSED=`echo "scale=8; ($LOG_END - $LOG_START) / 1000000000" | bc`
+fi
+echo -e "${YELLOW}Makefile generated in ${ELAPSED} seconds.${CLEAN_COLOR}"
 
