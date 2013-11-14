@@ -12,6 +12,12 @@ Help
 ------------
 To check the help pass the -h option to the script.
 
+FAQ
+---
+Why do I get `\e[00;33` everywhere?
+The bash version in /bin/bash isn't the right one, symlink a newer one (like `5.0`). Use [Homebrew](http://brew.sh/) to install it
+on Mac. Linux shouldn't have any issue :)
+
 License
 -----
 The script is distributed under the GNU v3 License.
