@@ -333,7 +333,7 @@ if [  "$FORCE" = "" -a -f "$MAKEFILE" ] ; then
     M_LIBS="`grep "^LIBS :=" ${MAKEFILE} | sed 's#LIBS := ##g'`"
     M_EXEC="`grep "^EXEC :=" ${MAKEFILE} | sed 's#EXEC := ##g'`"
 
-    if [ ! "${M_CXX}" = "${CXX}" -o ! "${M_LINKER}" = "${LINKER}" -o ! "${M_OPT}" = "${DEFAULT_OPTIONS} ${OPTIONS} ${DEFAULT_INCLUDE} ${INCLUDE}" -o ! "${M_LIBS}" = "${DEFAULT_LINK} ${LIBS}" -o ! "${M_LINK_OPT}" = "${DEFAULT_LINK_OPT} ${LINK_OPT}" -o ! "${M_EXEC}" = "${EXEC}" ]; then
+    if [ ! "${M_CXX}" = "${CXX}" -o ! "${M_LINKER}" = "${LINKER}" -o ! "${M_OPT}" = "${DEFAULT_OPTIONS} ${OPTIONS} ${DEFAULT_INCLUDE} ${INCLUDE}" -o ! "${M_LIBS}" = "${DEFAULT_LINK} ${LIBS}" -o ! "${M_LINK_OPT}" = "${DEFAULT_LINK_OPT} ${LINK_OPT} ${LINK}" -o ! "${M_EXEC}" = "${EXEC}" ]; then
       NEED_UPDATE="YES"
       echo -e "${RED}Some options changed, the Makefile must be generated again.${CLEAN_COLOR}"
     fi
@@ -357,7 +357,7 @@ echo "# Makefile generated with configure script by Eduardo San Martin Morote
 CXX := ${CXX}
 LINKER := ${LINKER}
 OPT := ${DEFAULT_OPTIONS} ${OPTIONS} ${DEFAULT_INCLUDE} ${INCLUDE}
-LINK_OPT := ${DEFAULT_LINK_OPT} ${LINK_OPT}
+LINK_OPT := ${DEFAULT_LINK_OPT} ${LINK_OPT} ${LINK}
 LIBS := ${DEFAULT_LINK} ${LIBS}
 EXEC := ${EXEC}
 
