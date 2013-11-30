@@ -355,10 +355,10 @@ echo "# Makefile generated with configure script by Eduardo San Martin Morote
 # Please report any bug to i@posva.net
 
 CXX := ${CXX}
-LINKER := ${LINKER}
-OPT := ${DEFAULT_OPTIONS} ${OPTIONS} ${DEFAULT_INCLUDE} ${INCLUDE}
-LINK_OPT := ${DEFAULT_LINK_OPT} ${LINK_OPT} ${LINK}
-LIBS := ${DEFAULT_LINK} ${LIBS}
+LINKER := $(echo ${LINKER})
+OPT := $(echo ${DEFAULT_OPTIONS} ${OPTIONS} ${DEFAULT_INCLUDE} ${INCLUDE})
+LINK_OPT := $(echo ${DEFAULT_LINK_OPT} ${LINK_OPT} ${LINK})
+LIBS := $(echo ${DEFAULT_LINK} ${LIBS})
 EXEC := ${EXEC}
 
 
