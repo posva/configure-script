@@ -294,7 +294,7 @@ fi
 FOLDERS=`find $SRC_DIR/* -type d | sed "s/$SRC_DIR/$OBJ_DIR/g"`
 FOLDERS=`echo $FOLDERS | tr '\n' ' '`
 FILES=`find $SRC_DIR/* -type f -name "*.$FILE_EXT"`
-OBJ_FILES="`echo "${FILES}" | sed -e "s#^ *${SRC_DIR}#${OBJ_DIR}#g" -e "s#${FILE_EXT}#${OBJ_EXT}#g"`"
+OBJ_FILES="`echo "${FILES}" | sed -e "s#^ *${SRC_DIR}#${OBJ_DIR}#g" -e "s#\.${FILE_EXT}#.${OBJ_EXT}#g"`"
 OBJ_FILES=`echo $(echo ${OBJ_FILES})`
 
 # Check if there's already a Makefile
@@ -304,7 +304,7 @@ if [  "$FORCE" = "" -a -f "$MAKEFILE" ] ; then
 
   # We first check if there is a new file in the project
   for F in `echo $FILES`; do
-    OF=`echo "$F" | sed -e "s#${SRC_DIR}#${OBJ_DIR}#g" -e "s#${FILE_EXT}#${OBJ_EXT}#g"`
+    OF=`echo "$F" | sed -e "s#${SRC_DIR}#${OBJ_DIR}#g" -e "s#\.${FILE_EXT}#.${OBJ_EXT}#g"`
     if ! grep "$OF" $MAKEFILE 2>/dev/null 1>/dev/null ; then
       NEED_UPDATE="YES"
       echo -e "${RED}${OF} doesn't have a rule. A new ${MAKEFILE} is going to be generated.${CLEAN_COLOR}"
@@ -429,13 +429,13 @@ for F in `echo $FILES`; do
   # add the rule to the Makefile
   case "$LANGUAGE" in
     C)
-      echo "`echo $F | sed -e "s#${SRC_DIR}#${OBJ_DIR}#g" -e "s#${FILE_EXT}#${OBJ_EXT}#g"` : ${F} ${FINAL_DEP}
+      echo "`echo $F | sed -e "s#${SRC_DIR}#${OBJ_DIR}#g" -e "s#\.${FILE_EXT}#.${OBJ_EXT}#g"` : ${F} ${FINAL_DEP}
 	\$(CXX) \$(OPT) \$< -c -o \$@
 
 " >> $MAKEFILE
       ;;
     java)
-      echo "`echo $F | sed -e "s#${SRC_DIR}#${OBJ_DIR}#g" -e "s#${FILE_EXT}#${OBJ_EXT}#g"` : ${F} ${FINAL_DEP}
+      echo "`echo $F | sed -e "s#${SRC_DIR}#${OBJ_DIR}#g" -e "s#\.${FILE_EXT}#.${OBJ_EXT}#g"` : ${F} ${FINAL_DEP}
 	\$(CXX) \$(OPT) \$(LIBS) \$<
 
 " >> $MAKEFILE
