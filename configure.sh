@@ -360,8 +360,6 @@ OPT := $(echo ${DEFAULT_OPTIONS} ${OPTIONS} ${DEFAULT_INCLUDE} ${INCLUDE})
 LINK_OPT := $(echo ${DEFAULT_LINK_OPT} ${LINK_OPT} ${LINK})
 LIBS := $(echo ${DEFAULT_LINK} ${LIBS})
 EXEC := ${EXEC}
-
-
 " > ${MAKEFILE}
 
 case "$LANGUAGE" in
@@ -379,6 +377,9 @@ clean :
 	rm -f $OBJ_FILES ${BIN_DIR}/\$(EXEC)
 .PHONY : clean
 
+valgrind : all
+	valgrind -v --leak-check=full --tool=memcheck ./${BIN_DIR}/\$(EXEC)
+.PHONY : valgrind
 " >> ${MAKEFILE}
     ;;
   java)
