@@ -332,15 +332,25 @@ if [  "$FORCE" = "" -a -f "$MAKEFILE" ] ; then
     M_LINK_OPT="`grep "^LINK_OPT :=" ${MAKEFILE} | sed 's#LINK_OPT := ##g'`"
     M_LIBS="`grep "^LIBS :=" ${MAKEFILE} | sed 's#LIBS := ##g'`"
     M_EXEC="`grep "^EXEC :=" ${MAKEFILE} | sed 's#EXEC := ##g'`"
+    N_OPT=`echo $OPTIONS $DEFAULT_OPTIONS $DEFAULT_INCLUDE $INCLUDE`
+    N_LIBS=`echo $LIBS $DEFAULT_LINK`
+    N_LINK_OPT=`echo $LINK_OPT $DEFAULT_LINK_OPT $LINK`
+    N_LINKER=`echo $LINKER`
+    N_CXX=`echo $CXX`
+    N_EXEC=`echo $EXEC`
 
-    if [ ! "${M_CXX}" = "${CXX}" -o ! "${M_LINKER}" = "${LINKER}" -o ! "${M_OPT}" = "${DEFAULT_OPTIONS} ${OPTIONS} ${DEFAULT_INCLUDE} ${INCLUDE}" -o ! "${M_LIBS}" = "${DEFAULT_LINK} ${LIBS}" -o ! "${M_LINK_OPT}" = "${DEFAULT_LINK_OPT} ${LINK_OPT} ${LINK}" -o ! "${M_EXEC}" = "${EXEC}" ]; then
+    if [ ! "${M_CXX}" = "${N_CXX}" -o \
+      ! "${M_LINKER}" = "${N_LINKER}" -o \
+      ! "${M_OPT}" = "${N_OPT}" -o \
+      ! "${M_LIBS}" = "${N_LIBS}" -o \
+      ! "${M_LINK_OPT}" = "${N_LINK_OPT}" -o \
+      ! "${M_EXEC}" = "${N_EXEC}" ]; then
       NEED_UPDATE="YES"
       echo -e "${RED}Some options changed, the Makefile must be generated again.${CLEAN_COLOR}"
     fi
   fi
 
-  # We need to do a verification of the dependencies for each rule
-  # TODO Add the real verification isntead of a Warning message
+  # We can do a verification of the dependencies for each rule but we're not :P
   if [ ! "$NEED_UPDATE" ]; then
     echo -e "${YELLOW}It seems the $MAKEFILE is up-to-date, though not a single dependency has been checked. Therefore if you have added new dependencies (#include) to any of the files in the project consider using the -f option to regenerate it.${CLEAN_COLOR}"
     exit
