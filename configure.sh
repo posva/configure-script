@@ -382,6 +382,12 @@ ${BIN_DIR}/\$(EXEC) : ${OBJ_FILES}
 
 run : all
 	./${BIN_DIR}/\$(EXEC)
+.PHONY : run
+
+# Create a file test-all.sh to make this work
+test : all
+	./test-all.sh
+.PHONY : test
 
 clean :
 	rm -f $OBJ_FILES ${BIN_DIR}/\$(EXEC)
