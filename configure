@@ -1,4 +1,3 @@
-
 #! /bin/bash
 
 # I usually have this kind of script in my project folder so that I don't have to manually write the configure options everytime I add new dependencies to the project
@@ -8,11 +7,23 @@
 # This script works on Windows. Installing cygwin is the easiest way to get this working
 
 CONF=~/configure-script/configure.sh
+if [[ ! -x ${CONF} ]]; then
+  if [[ ! -x configure.sh ]]; then
+    wget -q -O configure.sh https://raw.github.com/posva/configure-script/master/configure.sh
+    chmod +x configure.sh
+  fi
+  CONF=./configure.sh
+fi
+
+#Common options between different OS
+OPT="-Wall -Wextra -O2"
+EXT=c
+MAK="Makefile"
 
 if [ `uname` = "Darwin" ]; then
-  ${CONF} -aD -s src -o obj -b bin -c "xcrun clang" -O "-Wall -Wextra -O2" -Isrc -L/usr/local/lib -e c -E main -M Makefile -l "-lm" $@
+  ${CONF} -aD -s src -o obj -b bin -c "xcrun clang" -O "$OPT" -Isrc -L/usr/local/lib -e $EXT -E main -M $MAK -l "-lm" $@
 elif [ `uname` = "Linux" ]; then
-  ${CONF} -aD -s src -o obj -b bin -c "clang" -O "-Wall -Wextra -O2" -Isrc -L/usr/local/lib -e c -E main -M Makefile -l "-lm" $@
+  ${CONF} -aD -s src -o obj -b bin -c "clang" -O "$OPT" -Isrc -L/usr/local/lib -e $EXT -E main -M $MAK -l "-lm" $@
 else
-  ${CONF} -aD -s src -o obj -b bin -c "mingw32-gcc" -O "-Wall -Wextra -O2" -Isrc -e cpp -E main -M Makefile -l "-lm" $@
+  ${CONF} -aD -s src -o obj -b bin -c "mingw32-gcc" -O "$OPT" -Isrc -e $EXT -E main -M $MAK -l "-lm" $@
 fi
