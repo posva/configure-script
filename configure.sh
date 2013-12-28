@@ -85,8 +85,12 @@ EXEC="main"
 # Change with -M newName
 MAKEFILE="Makefile"
 
-# Almost useless since this script is already wuite verbose
+# Almost useless since this script is already quite verbose
 VERBOSE=""
+
+# Used to display the progress of the compilation instead of the executed command
+# Default is false
+CMAKE_STYLE=""
 
 # Utility functions
 
@@ -143,12 +147,13 @@ function find_dependencies_aux() {
 # Just the help when -h
 ME="$0"
 function help() {
-  echo "usage: ${ME} [-hfDav] [-G lang] [-s src-dir] [-o obj-dir] [-b bin-dir] [-c compiler] [-k linker] [-O \"compiler options\"] [-L link-dirs] [-l \"-lsome-lib -lother-lib\"] [-I include-dir] [-M Makefile-name] [-e file-extension] [-E executable-name] [-N linker-options]
+  echo "usage: ${ME} [-hfDavp] [-G lang] [-s src-dir] [-o obj-dir] [-b bin-dir] [-c compiler] [-k linker] [-O \"compiler options\"] [-L link-dirs] [-l \"-lsome-lib -lother-lib\"] [-I include-dir] [-M Makefile-name] [-e file-extension] [-E executable-name] [-N linker-options]
   -h\tShow this help.
   -D\tSupress the default options for -L, -I, -N and -O.
   -a\tAutomatic conversion of file in dos format to unix format. This option uses d.
   -f\tForces the creation of the Makefile when it already exists without doing any verification.
   -v\tVerbose mode: Show the dependencies for every file
+  -p\tCmake style: Display a percentage instead of the command executed
 
   If you change the compiler with the -c option but not the linker with the -k option, the linker is set to the compiler
   Remember that the -l option requires you to add the -l to any lib as it is shown in the example. However it's the oposite for the -L and -I options which both add the -L and the -I before every argument. Therefore consider using a single -l option and multiple -I and -L options.
@@ -211,30 +216,6 @@ function change_lang() {
       INC_FILENAME_BEG=""
       INC_FILENAME_END=""
       ;;
-    java)
-      SRC_DIR="src"
-      OBJ_DIR="bin"
-      BIN_DIR="bin"
-      CXX="javac"
-      LINKER="javac"
-      DEFAULT_OPTIONS="-g -encoding UTF8"
-      OPTIONS=""
-      DEFAULT_INCLUDE="-sourcepath ${SRC_DIR}"
-      INCLUDE=""
-      DEFAULT_LINK="-d ${BIN_DIR}"
-      LINK=""
-      LIBS=""
-      DEFAULT_LINK_OPT=""
-      LINK_OPT=""
-      FILE_EXT="java"
-      OBJ_EXT="class"
-      EXEC="App"
-      INC_PREP="^ *import"
-      INC_PREP_BEG="^ *import  *.*\\."
-      INC_PREP_END=";.*"
-      INC_FILENAME_BEG=""
-      INC_FILENAME_END=".java"
-      ;;
     *)
       echo "The language ${LANGUAGE} is not supported (yet). You can ass the support if you want and do a pull request at https://github.com/posva/configure-script . I'll really appreciate it :D"
       exit 1
@@ -245,12 +226,13 @@ function change_lang() {
 # Recognize parameters
 COMPILER_CHANGED=""
 LINKER_SET=""
-while getopts avfhCs:o:b:c:k:DO:L:l:I:M:e:E:N:G: opt
+while getopts apvfhCs:o:b:c:k:DO:L:l:I:M:e:E:N:G: opt
 do
   case "$opt" in
     (h) help ; exit ;;
     (v) VERBOSE="YES" ;;
     (a) AUTO_UNIX="YES" ;;
+    (p) CMAKE_STYLE="YES" ;;
     (C) COLORS="" ;;
     (s) SRC_DIR="$OPTARG" ;;
     (b) BIN_DIR="$OPTARG" ;;
@@ -398,19 +380,6 @@ valgrind : all
 .PHONY : valgrind
 " >> ${MAKEFILE}
     ;;
-  java)
-    echo "all : ${OBJ_FILES}
-
-run : all
-	cd ${BIN_DIR} && java ${EXEC}
-.PHONY : run
-
-clean :
-	rm -f $OBJ_FILES
-.PHONY : clean
-
-" >> ${MAKEFILE}
-    ;;
 esac
 
 # TODO nest every echo in the case to avoid unused variables
@@ -427,6 +396,9 @@ else
 fi
 
 # Find every dependecy for each file
+TOTAL_FILES=`echo \`echo $FILES | wc -w\``
+echo "TOTAL:$TOTAL_FILES"
+NOW_FILE=0
 for F in `echo $FILES`; do
   is_unix_valid $F
   ERR="$?"
@@ -448,12 +420,6 @@ for F in `echo $FILES`; do
     C)
       echo "`echo $F | sed -e "s#${SRC_DIR}#${OBJ_DIR}#g" -e "s#\.${FILE_EXT}#.${OBJ_EXT}#g"` : ${F} ${FINAL_DEP}
 	\$(CXX) \$(OPT) \$< -c -o \$@
-
-" >> $MAKEFILE
-      ;;
-    java)
-      echo "`echo $F | sed -e "s#${SRC_DIR}#${OBJ_DIR}#g" -e "s#\.${FILE_EXT}#.${OBJ_EXT}#g"` : ${F} ${FINAL_DEP}
-	\$(CXX) \$(OPT) \$(LIBS) \$<
 
 " >> $MAKEFILE
       ;;
