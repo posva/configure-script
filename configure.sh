@@ -352,17 +352,26 @@ OPT := $(echo ${DEFAULT_OPTIONS} ${OPTIONS} ${DEFAULT_INCLUDE} ${INCLUDE})
 LINK_OPT := $(echo ${DEFAULT_LINK_OPT} ${LINK_OPT} ${LINK})
 LIBS := $(echo ${DEFAULT_LINK} ${LIBS})
 EXEC := ${EXEC}
+SHELL := ${SHELL}
 " > ${MAKEFILE}
 
 case "$LANGUAGE" in
   C)
     echo "
 all : ${BIN_DIR}/\$(EXEC)
+" >> ${MAKEFILE}
 
-${BIN_DIR}/\$(EXEC) : ${OBJ_FILES}
+    if [ "$CMAKE_STYLE" ]; then
+      echo "${BIN_DIR}/\$(EXEC) : ${OBJ_FILES}
+	@echo -e \"\e[31;1mLinking \$(EXEC)\e[0m\" && \$(LINKER) \$(LINK_OPT) \$^ -o "\$@" \$(LIBS)
+" >> ${MAKEFILE}
+    else
+      echo "${BIN_DIR}/\$(EXEC) : ${OBJ_FILES}
 	\$(LINKER) \$(LINK_OPT) \$^ -o "\$@" \$(LIBS)
+" >> ${MAKEFILE}
+    fi
 
-run : all
+echo "run : all
 	./${BIN_DIR}/\$(EXEC)
 .PHONY : run
 
@@ -397,7 +406,6 @@ fi
 
 # Find every dependecy for each file
 TOTAL_FILES=`echo \`echo $FILES | wc -w\``
-echo "TOTAL:$TOTAL_FILES"
 NOW_FILE=0
 for F in `echo $FILES`; do
   is_unix_valid $F
@@ -413,15 +421,25 @@ for F in `echo $FILES`; do
   if [ ! "$ERR" = 0 ]; then
     exit $ERR
   fi
-  ## Supress blank characters
+  # Supress blank characters
   FINAL_DEP=$(echo `echo $MY_DEP`)
-  # add the rule to the Makefile
+
+  # Add the rule to the Makefile
   case "$LANGUAGE" in
     C)
-      echo "`echo $F | sed -e "s#${SRC_DIR}#${OBJ_DIR}#g" -e "s#\.${FILE_EXT}#.${OBJ_EXT}#g"` : ${F} ${FINAL_DEP}
-	\$(CXX) \$(OPT) \$< -c -o \$@
-
+      if [ "$CMAKE_STYLE" ]; then
+        ((
+          NOW_FILE++,
+          PERC = 100 * NOW_FILE / TOTAL_FILES
+        ))
+        echo "`echo $F | sed -e "s#${SRC_DIR}#${OBJ_DIR}#g" -e "s#\.${FILE_EXT}#.${OBJ_EXT}#g"` : ${F} ${FINAL_DEP}
+	@echo -e \"[${PERC}%] \e[32mBuilding \$@\e[0m\" && \$(CXX) \$(OPT) \$< -c -o \$@
 " >> $MAKEFILE
+      else
+        echo "`echo $F | sed -e "s#${SRC_DIR}#${OBJ_DIR}#g" -e "s#\.${FILE_EXT}#.${OBJ_EXT}#g"` : ${F} ${FINAL_DEP}
+	\$(CXX) \$(OPT) \$< -c -o \$@
+" >> $MAKEFILE
+      fi
       ;;
   esac
 
