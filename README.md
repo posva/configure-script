@@ -5,7 +5,7 @@ by Eduardo San Martin Morote aka Posva
 
 posva13@gmail.com
 
-**If you have python3 you should use this version instead: [https://github.com/posva/configure.py](https://github.com/posva/configure.py)
+**If you have python3 you should use this version instead: [https://github.com/posva/configure.py](https://github.com/posva/configure.py)**
 
 Intro
 -----
