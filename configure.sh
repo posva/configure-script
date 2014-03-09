@@ -147,13 +147,13 @@ function find_dependencies_aux() {
 # Just the help when -h
 ME="$0"
 function help() {
-  echo "usage: ${ME} [-hfDavp] [-G lang] [-s src-dir] [-o obj-dir] [-b bin-dir] [-c compiler] [-k linker] [-O \"compiler options\"] [-L link-dirs] [-l \"-lsome-lib -lother-lib\"] [-I include-dir] [-M Makefile-name] [-e file-extension] [-E executable-name] [-N linker-options]
+  echo -e "usage: ${ME} [-hfDavp] [-G lang] [-s src-dir] [-o obj-dir] [-b bin-dir] [-c compiler] [-k linker] [-O \"compiler options\"] [-L link-dirs] [-l \"-lsome-lib -lother-lib\"] [-I include-dir] [-M Makefile-name] [-e file-extension] [-E executable-name] [-N linker-options]
   -h\tShow this help.
   -D\tSupress the default options for -L, -I, -N and -O.
   -a\tAutomatic conversion of file in dos format to unix format. This option uses d.
   -f\tForces the creation of the Makefile when it already exists without doing any verification.
   -v\tVerbose mode: Show the dependencies for every file
-  -p\tCmake style: Display a percentage instead of the command executed
+  -p\tCMake style: Display a percentage instead of the command executed
 
   If you change the compiler with the -c option but not the linker with the -k option, the linker is set to the compiler
   Remember that the -l option requires you to add the -l to any lib as it is shown in the example. However it's the oposite for the -L and -I options which both add the -L and the -I before every argument. Therefore consider using a single -l option and multiple -I and -L options.
