@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /usr/bin/env bash
 
 # I usually have this kind of script in my project folder so that I don't have to manually write the configure options everytime I add new dependencies to the project
 # This is a basic one for a C project
