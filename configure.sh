@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 # If the colors doesn't work under OSX, get a newer version of bash and use that one
 # You can also use zsh or disable color (WHY?!) with the -C option
 
